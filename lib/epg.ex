@@ -18,7 +18,7 @@ defmodule Epg do
       String.to_integer(x)
       |> parse_input
     rescue
-      e in ArgumentError -> {:error, "unable to parse input"}
+      _e in ArgumentError -> {:error, "unable to parse input"}
     end
   end
 
@@ -44,7 +44,7 @@ defmodule Epg do
     nums = 2..n-1
     nums
     |> Enum.map(fn x -> rem(n, x) end)
-    |> Enum.reduce_while(0, fn (i, acc) ->
+    |> Enum.reduce_while(0, fn (i, _acc) ->
       if i == 0, do: {:halt, false}, else: {:cont, true}
     end )
   end
@@ -99,6 +99,48 @@ defmodule Epg do
       true -> generate_primes_priv(n - 1, next_num, primes ++ [next_num])
       false -> generate_primes_priv(n, next_num, primes)
     end
+  end
+
+  @doc """
+    Generates a row major multiplication table of size N + 1 x N + 1
+    when given a list of integers
+
+    Returns `{:error, message}` on failure
+
+    ## Examples
+
+      iex> Epg.generate_multiplication_table([2])
+      [[nil, 2], [2, 4]]
+
+      iex> Epg.generate_multiplication_table([2, 3])
+      [[nil, 2, 3], [2, 4, 6], [3, 6, 9]]
+
+      iex> Epg.generate_multiplication_table([])
+      []
+
+  """
+  def generate_multiplication_table([]) do
+    []
+  end
+
+  def generate_multiplication_table(numbers) when is_list(numbers) do
+    first_row = [nil] ++ numbers
+    list_length = length(numbers)
+    try do
+      [first_row] ++ Enum.map(1..list_length, fn x -> generate_multiplication_table_row(x, numbers) end)
+    rescue
+      _e in ArithmeticError -> {:error, "input must be a list of numbers"}
+    end
+
+  end
+
+  def generate_multiplication_table(numbers) when is_list(numbers) == false do
+    {:error, "input must be a list of numbers"}
+  end
+
+  defp generate_multiplication_table_row(n, numbers) do
+    coefficient = numbers |> Enum.at(n - 1)
+    [coefficient] ++ Enum.map(numbers, fn x -> coefficient * x end)
   end
 end
 
