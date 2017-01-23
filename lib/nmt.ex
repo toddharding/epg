@@ -5,23 +5,31 @@ defmodule Epg.NMT do
   """
 
   def check_numbers(numbers) when is_list(numbers) do
-    numbers |> Enum.map(fn {n, _status} ->
-        case Epg.is_prime(n) do
-          true -> {n, :prime}
-          false -> {n, :not_prime}
-        end
+    numbers
+    |> Enum.map(fn {n, _status} ->
+      {n,Task.async(Epg, :is_prime, [n])}
+     end)
+    |> Enum.map(fn {n, t} ->
+      case Task.await(t) do
+        true -> {n, :prime}
+        false -> {n, :not_prime}
+      end
      end)
   end
 
+  defp chunk_heuristic(n) do
+    cores = :erlang.system_info(:logical_processors) * 16
+  end
+
   def generate_primes(n) when is_integer(n) and n > 0 do
+    chunk_size = chunk_heuristic(n)
     primes = Stream.unfold(3, fn x -> {x, x + 1} end)
     |> Stream.take_every(2)
     |> Stream.map(fn x -> {x, :not_prime} end)
-    |> Stream.chunk(16)
+    |> Stream.chunk(chunk_size)
     |> Stream.map(fn x ->
-      Task.async(__MODULE__, :check_numbers, [x])
+      check_numbers(x)
      end)
-    |> Stream.map(fn x -> Task.await(x) end)
     |> Stream.concat
     |> Stream.filter(fn {_, status} -> status == :prime  end)
     |> Stream.map(fn {number, _} -> number end)
