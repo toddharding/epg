@@ -27,6 +27,4 @@ defmodule Epg.Bench.PrimeGenerators do
   bench "Naive Multi Threading first 1000 prime numbers" do
     Epg.NMT.generate_primes(1000)
   end
-
-
 end

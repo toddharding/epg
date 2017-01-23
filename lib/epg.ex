@@ -51,6 +51,10 @@ defmodule Epg do
     true
   end
 
+  def is_prime(n) when is_integer(n) and rem(n, 2) == 0 do
+    false
+  end
+
   def is_prime(n) when is_integer(n) and n > 2 do
     nums = 2..n-1
     nums
