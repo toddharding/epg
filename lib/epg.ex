@@ -3,6 +3,17 @@ defmodule Epg do
   Documentation for Epg.
   """
 
+  def main(argsv \\ []) do
+    {parsed, [number], invalid} = OptionParser.parse(argsv)
+    case parse_input(number) do
+      x when is_integer(x) ->
+        generate_primes(x)
+        |> generate_multiplication_table
+        |> print_table
+      {:error, message} -> IO.puts message
+    end
+  end
+
   @doc """
   Parses user input
 

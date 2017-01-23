@@ -2,11 +2,12 @@ defmodule Epg.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :mix_project,
+    [app: :epg,
      version: "0.1.0",
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     escript: escript(),
      deps: deps()]
   end
 
@@ -18,6 +19,9 @@ defmodule Epg.Mixfile do
     [extra_applications: [:logger]]
   end
 
+  def escript do
+    [main_module: Epg]
+  end
   # Dependencies can be Hex packages:
   #
   #   {:my_dep, "~> 0.3.0"}
