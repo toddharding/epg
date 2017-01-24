@@ -4,10 +4,10 @@ defmodule Epg do
   """
 
   def main(argsv \\ []) do
-    {parsed, [number], invalid} = OptionParser.parse(argsv)
+    {_parsed, [number], _invalid} = OptionParser.parse(argsv)
     case parse_input(number) do
       x when is_integer(x) ->
-        generate_primes(x)
+        Epg.SOE.generate_primes(x)
         |> generate_multiplication_table
         |> print_table
       {:error, message} -> IO.puts message
