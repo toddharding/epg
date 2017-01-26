@@ -1,15 +1,17 @@
-defmodule Epg.Test.MT.GeneratePrimes do
+defmodule Epg.Test.MultiProcess.GeneratePrimes do
   use ExUnit.Case
+  doctest Epg.MultiProcess
+
   test "if input is 1, the output must be [2]" do
-    assert Epg.NMT.generate_primes(1) == [2]
+    assert Epg.MultiProcess.generate_primes(1) == [2]
   end
 
   test "if input is 2, the output must be [2, 3]" do
-    assert Epg.NMT.generate_primes(2) == [2, 3]
+    assert Epg.MultiProcess.generate_primes(2) == [2, 3]
   end
 
   test "if input is 3, the output must be [2, 3, 5]" do
-    assert Epg.NMT.generate_primes(3) == [2, 3, 5]
+    assert Epg.MultiProcess.generate_primes(3) == [2, 3, 5]
   end
 
   test "first 100 primes" do
@@ -19,14 +21,14 @@ defmodule Epg.Test.MT.GeneratePrimes do
       373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503,
       509, 521, 523, 541]
 
-    assert Epg.NMT.generate_primes(100) == primes
+    assert Epg.MultiProcess.generate_primes(100) == primes
   end
 
   test "generate_primes must output an error if given a negative number" do
-    assert {:error, _message} = Epg.NMT.generate_primes(-2)
+    assert {:error, _message} = Epg.MultiProcess.generate_primes(-2)
   end
 
   test "input must not be a string" do
-    assert {:error, _message} = Epg.NMT.generate_primes("25")
+    assert {:error, _message} = Epg.MultiProcess.generate_primes("25")
   end
 end

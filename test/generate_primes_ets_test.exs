@@ -1,6 +1,6 @@
 defmodule Epg.Test.SOEETS.GeneratePrimes do
   use ExUnit.Case
-  doctest Epg.SOE
+  doctest Epg.SOEETS
 
   test "if input is 1, the output must be [2]" do
     assert Epg.SOEETS.generate_primes(1) == [2]
