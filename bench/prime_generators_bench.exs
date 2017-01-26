@@ -53,15 +53,15 @@ defmodule Epg.Bench.PrimeGenerators do
 #  end
 
   # 10000
-  bench "Sieve of Eratosthenes first 10000 prime numbers" do
-    Epg.SOE.generate_primes(10000)
+  bench "Sieve of Eratosthenes first 1000 prime numbers" do
+    Epg.SOE.generate_primes(1000)
   end
 
-  bench "MT Sieve of Eratosthenes first 10000 prime numbers" do
-    Epg.SOEMT.generate_primes(10000)
+  bench "MT Sieve of Eratosthenes first 1000 prime numbers" do
+    Epg.SOEMT.generate_primes(1000)
   end
 
-  bench "ETS Sieve of Eratosthenes first 10000 prime numbers" do
-    Epg.SOEETS.generate_primes(10000)
+  bench "ETS Sieve of Eratosthenes first 1000 prime numbers" do
+    Epg.SOEETS.generate_primes(1000)
   end
 end

@@ -20,7 +20,10 @@ defmodule Epg.SOEMT do
       [2, 3, 5]
 
     """
-  def generate_primes(n) when is_integer(n) and n > 0 do
+  def generate_primes(n) when is_integer(n) and n < 32 and n > 0 do
+    Epg.SOE.generate_primes(n)
+  end
+  def generate_primes(n) when is_integer(n) and n >= 32 do
     generate_primes_upto(calculate_nth_prime_approximate(n))
     |> Enum.take(n)
   end
@@ -28,6 +31,8 @@ defmodule Epg.SOEMT do
   def generate_primes(_) do
     {:error, "input must be a positive integer"}
   end
+
+  def partition_manager
 
   @doc """
     Generates a list of prime numbers upto the given number
@@ -43,61 +48,258 @@ defmodule Epg.SOEMT do
       [2, 3, 5, 7, 11, 13]
 
   """
-  def generate_primes_upto(n) when is_integer(n) and n > 1 do
-    2..n
-    |> Enum.map(fn x -> {x, :prime} end)                    # generate tuples of {2, :prime}..{n, :prime}
-    |> Enum.into(%{})                                       # and insert into map
-    |> generate_primes_upto_priv(2, n)                      # generate the prime number map
-    |> Enum.filter(fn {_x, status} -> status == :prime end) # filter out the `not primes`
-    |> Enum.map(fn {x, _} -> x end)                         # convert tuple back to integer removing the :prime atom
-    |> Enum.sort                                            # sort in ascending order
-  end
-
-  defp generate_primes_upto_priv(numbers = %{}, p, n ) when p <= n do
-    numbers = case numbers[p] do
-      # if number at p is prime then generate its multiples upto n and mark them as not prime
-      :prime ->
-        [_ | multiples] = generate_multiples_upto(p, n)
-        mark_composites(numbers, multiples)
-      :not_prime ->
-        numbers
+  def generate_primes_upto(n) when is_integer(n) do
+    pid = spawn_link(__MODULE__, :generate_primes_upto, [self, n])
+    receive do
+      {:found_primes, primes} -> primes
     end
-    generate_primes_upto_priv(numbers, p + 1, n)
   end
 
-  defp generate_primes_upto_priv(numbers = %{}, _p, _n) do
-    numbers
+  def generate_primes_upto(caller, n) when is_integer(n) and n > 1 do
+    chunks = :erlang.system_info(:schedulers_online) * 4
+    ranges = calculate_partition_data(n, chunks)
+    partitions = Enum.reduce(ranges, %{}, fn [chunk_id: id, range: %{from: from, to: to}] = data, acc ->
+      partition_data = Enum.into(data, %{pid: spawn_link(__MODULE__, :partition, [[], from, to]), status: :idle })
+      Map.put(acc, id, partition_data)
+    end)
+    #IO.inspect partitions
+    self_pid = self()
+    partitions = Enum.reduce(partitions, %{}, fn {id, %{pid: pid} = data}, acc ->
+      send(pid, {:mark_composites, 2, self_pid, id})
+      Map.put(acc, id, Map.put(data, :status, :working))
+    end)
+    generate_primes_upto(caller, n, 2, chunks, ranges, partitions)
   end
 
-  defp mark_composites(numbers, multiples) do
-     Enum.reduce(multiples, numbers, fn x, acc ->
+  def generate_primes_upto(caller, n, current_prime, chunks, ranges, partitions) do
+    receive do
+      {:composites_marked, chunk_id, number} ->
+        #IO.puts "Composites of #{number} marked chunk: #{chunk_id}"
+        partitions = update_partition_data(partitions, chunk_id, :idle)
+        # check if all are idle
+        case check_if_all_partitions_are_idle(partitions) do
+          :not_idle ->
+            generate_primes_upto(caller, n, current_prime, chunks, ranges, partitions)
+          :idle ->
+            #IO.puts "All partitions are idle"
+            # if so calculate next prime
+            # and send mark_composites message to partitions
+            #IO.puts "calculating next prime"
+            next_prime = calculate_next_prime(current_prime, partitions)
+            #IO.puts "next prime"
+            #IO.inspect next_prime
+            self_pid = self()
+            partitions = Enum.reduce(partitions, %{}, fn {id, %{pid: pid, status: status} = data}, acc ->
+              case status do
+                :done ->
+                  Map.put(acc, id, data)
+                :idle ->
+                  send(pid, {:mark_composites, next_prime, self_pid, id })
+                  Map.put(acc, id, Map.put(data, :status, :working))
+              end
+            end)
+            generate_primes_upto(caller, n, next_prime, chunks, ranges, partitions)
+        end
+      {:done, chunk_id} ->
+        #IO.puts "chunk #{chunk_id} has completed its work"
+        #IO.puts "---"
+        #IO.puts "value of partitions on receive {:done, chunk_id} is"
+        #IO.inspect partitions
+        #IO.puts "---"
+        partitions = update_partition_data(partitions, chunk_id, :done)
+        # check if all are done
+        # if all are done aggregate partition data
+        # and send complete message to caller
+        work_status = check_if_all_partitions_have_completed(partitions)
+        case work_status do
+          :done ->
+            #IO.puts "---"
+            #IO.puts "done?"
+            #IO.inspect partitions
+           # IO.puts "---"
+            primes = Enum.map(partitions, fn {id, %{pid: pid}} ->
+              send(pid, {:get_numbers, self()})
+              receive do
+                numbers when is_map(numbers) ->
+                #IO.puts "---"
+                #IO.puts "chunk #{id} numbers are:"
+               # IO.inspect numbers
+                #IO.puts "---"
+                numbers
+              end
+            end)
+            |> Enum.concat
+            |> Enum.filter(fn {number, status} -> status == :prime end)
+            |> Enum.map(fn {x, status} -> x end)
+            |> Enum.dedup
+            |> Enum.sort
+            send(caller, {:found_primes, primes})
+          _ ->
+            #IO.puts "continuing as not all partitions have finished"
+            generate_primes_upto(caller, n, current_prime, chunks, ranges, partitions)
+        end
+
+    end
+  end
+
+  def update_partition_data(partitions, chunk_id, status) do
+    partition = Map.get(partitions, chunk_id)
+    partition = Map.put(partition, :status, status)
+    Map.put(partitions, chunk_id, partition)
+  end
+
+  defp check_if_all_partitions_have_completed(partitions) do
+    partitions
+    |> Enum.reduce_while(:not_done, fn {_id, %{status: status}}, acc ->
+      case status do
+        :done -> {:cont, :done}
+        _ -> {:halt, :not_done}
+      end
+    end)
+  end
+
+  defp check_if_all_partitions_are_idle(partitions) do
+    idle_status = partitions
+    |> Enum.reduce_while(:not_idle, fn {_id, %{status: status}}, acc ->
+      case status do
+        :idle -> {:cont, :idle}
+        :done -> {:cont, :idle}
+        _ -> {:halt, :not_idle}
+      end
+    end)
+    #IO.puts "idle status is"
+    #IO.inspect idle_status
+    idle_status
+  end
+
+  def merge_complete_partition_data(partitions) do
+
+  end
+
+  def calculate_next_prime(current_prime, partitions) do
+    partitions
+    |> Enum.filter(fn {_id, %{status: status}} -> status != :done end)
+    |> Enum.map(fn {_id, %{pid: pid}} ->
+      send(pid, {:find_lowest_unmarked, current_prime, self()})
+      receive do
+        x when is_integer(x) -> x
+        nil -> nil
+      end
+     end)
+     |> Enum.filter(fn x -> x != nil end)
+     |> Enum.sort
+     |> List.first
+  end
+
+  def start_mark_composites(caller, partitions, number) do
+    Enum.each(partitions, fn %{pid: pid, chunk_id: chunk_id} -> send(pid, {:mark_composites, number, caller, chunk_id})  end)
+  end
+
+  def calculate_partition_data(upto, number_of_chunks) do
+    0..(number_of_chunks - 1)
+    |> Enum.map(fn x -> [{:chunk_id, x}, {:range, calculate_partition_range(upto, number_of_chunks, x)}] end)
+  end
+
+  def calculate_partition_range(upto, chunks, chunk_number) do
+    # upto = 30, chunks = 5, chunk_number = 3
+    number_in_chunk = round(Float.ceil(upto / chunks))
+    from = number_in_chunk * chunk_number
+    to = from + number_in_chunk
+    %{from: Enum.max([2, from]), to: Enum.min([to, upto])}
+  end
+
+  def partition(numbers, from, to) do
+    numbers = case numbers do
+      %{} -> numbers
+      _ -> create_partition_number_data(from, to)
+    end
+    receive do
+      {:mark_composites, number, caller, chunk_id} ->
+        #IO.puts "chunk #{chunk_id} marking multiples of #{number}"
+        # mark all composites (multiples)
+        marked_numbers = case number do
+          x when x >= to ->
+            send(caller, {:done, chunk_id})
+            numbers
+          x ->
+            first_multiple = find_first_multiple(numbers, number)
+            #IO.inspect first_multiple
+            updated_numbers = case first_multiple do
+              nil ->
+                numbers
+              {x, :prime} when x == number ->
+                mark_all_multiples(numbers, number, x + 1, to)
+              {x, :prime} ->
+                mark_all_multiples(numbers, number, x, to)
+            end
+            #IO.puts "informing sender that chunk id: #{chunk_id} has completed multiples of #{number}"
+            send(caller, {:composites_marked, chunk_id, number})
+            updated_numbers
+        end
+        partition(marked_numbers, from, to)
+      {:find_lowest_unmarked, greater_than, caller} ->
+        #IO.puts "finding lowest unmarked"
+        potential_primes = numbers
+        |> Enum.filter(fn {_number, status} -> status == :prime  end)
+        |> Enum.filter(fn {number, status} -> number > greater_than  end)
+        |> Enum.sort
+        |> Enum.map(fn {number, _} -> number end)
+
+        #IO.puts "potential primes are:"
+        #IO.inspect potential_primes
+        case potential_primes do
+          [] -> send(caller, nil)
+          [h | t] -> send(caller, h)
+        end
+        partition(numbers, from, to)
+      {:get_numbers, caller} ->
+        #IO.puts "Sending chunk data"
+        #IO.inspect numbers
+        send(caller, numbers)
+        partition(numbers, from, to)
+    end
+  end
+
+  def find_first_multiple(numbers, n) do
+    first_multiple = numbers |> Enum.sort |> Enum.filter(fn {_, status} -> status == :prime end) |> Enum.find(fn {x, _} -> rem(x, n) == 0 end)
+    #IO.puts "the first multiple is"
+    #IO.inspect first_multiple
+    first_multiple
+  end
+
+  def create_partition_number_data(from, to) do
+    from..to |> Enum.map(fn x -> {x, :prime} end) |> Enum.into(%{})
+  end
+
+  def generate_multiples(of, from, to, acc) when rem(from, of) != 0 do
+    #IO.puts "generate_multiples of #{of}, inbetween #{from} and #{to}"
+    next_from = from + (of - rem(from, of))
+    generate_multiples(of, next_from, to, acc)
+  end
+
+  def generate_multiples(of, from, to, acc) when from <= to and of <= to do
+    generate_multiples(of, from + of, to, acc ++ [from])
+  end
+
+  def generate_multiples(of, from, to, acc) when from > to or of > to do
+    acc
+  end
+
+  def mark_composites(multiples, numbers) do
+    updated_numbers = Enum.reduce(multiples, numbers, fn x, acc ->
       Map.put(acc, x, :not_prime)
     end)
+    updated_numbers
   end
 
-  def chunk_heuristic(amount) do
-    schedulers = :erlang.system_info(:schedulers_online)
-    chunk_size = div(amount, schedulers)
 
-    case chunk_size do
-      x when x < schedulers -> 8
-      x -> chunk_size
-    end
-  end
-
-  defp generate_multiples_upto(of, to) do
-    amount = div(to, of)
-    chunk_size = chunk_heuristic(amount)
-    #IO.puts "calculating multiples of #{of}, upto #{to}, with a chunk size of #{chunk_size}"
-    1..amount
-    |> Stream.chunk(chunk_size, chunk_size, [])
-    |> Stream.map(fn multiplicands -> Task.async(fn ->
-      multiplicands
-      |> Enum.map(fn x -> of * x end)
-     end)
-    end)
-    |> Stream.map(fn x -> Task.await(x) end)
-    |> Enum.concat
+  def mark_all_multiples(numbers, of, from, to) do
+    #IO.puts "Mark All Multiples of #{of}, inbetween #{from} and #{to} "
+    multiples = generate_multiples(of, from, to, [])
+    #IO.inspect multiples
+    updated_numbers = generate_multiples(of, from, to, [])
+    |> mark_composites(numbers)
+    updated_numbers
   end
 
   @doc """
@@ -128,4 +330,10 @@ defmodule Epg.SOEMT do
   def calculate_nth_prime_approximate(_) do
     {:error, "input must be a positive integer"}
   end
+
+
+
+
+
+
 end

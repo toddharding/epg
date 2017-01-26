@@ -32,6 +32,7 @@ defmodule Epg.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:benchfella, "~> 0.3.0"}]
+    [{:benchfella, "~> 0.3.0"},
+     {:exprof, "~> 0.2.0"}]
   end
 end
