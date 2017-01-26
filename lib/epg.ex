@@ -53,17 +53,16 @@ defmodule Epg do
     true
   end
 
-  def is_prime(n) when is_integer(n) and rem(n, 2) == 0 do
+  def is_prime(3) do
+    true
+  end
+
+  def is_prime(n) when rem(n, 2) == 0 or rem(n, 3) == 0 do
     false
   end
 
   def is_prime(n) when is_integer(n) and n > 2 do
-    nums = 2..n-1
-    nums
-    |> Enum.map(fn x -> rem(n, x) end)
-    |> Enum.reduce_while(0, fn (i, _acc) ->
-      if i == 0, do: {:halt, false}, else: {:cont, true}
-    end )
+    is_prime(n, 5)
   end
 
   def is_prime(x) when is_binary(x) do
@@ -76,6 +75,17 @@ defmodule Epg do
 
   def is_prime(_) do
     {:error, "unable to parse input"}
+  end
+
+  def is_prime(n, i) when (i * i) <= n do
+    if rem(n, i) == 0 or rem(n, i + 2) == 0 do
+      false
+    else
+      is_prime(n, (i + 6))
+    end
+  end
+  def is_prime(n, i) when (i * i) > n do
+    true
   end
 
   @doc """
