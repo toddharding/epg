@@ -52,11 +52,18 @@ if you would like to view all of the data then you can save the output into a fi
 
 This can be viewed in most text editors and will be formatted correctly as long as word wrap is disabled
 
-## Features
+## Features that I am happy with
 * Single process n primes generator (Epg.SingleProcess)
+  * Based on primality test from: https://en.wikipedia.org/wiki/Primality_test
 * Multi Process n primes generator (Epg.MultiProcess)
-* Sieve of Eratosthenes find prime numbers upto n generator (Epg.SOE)
+  * Runs the primality test on multiple integers at once
+  * Simple implementation using Task.async
+* Sieve of Eratosthenes find prime numbers up to n generator (Epg.SOE)
 * Sieve of Eratosthenes using ETS for storage (Epg.SOEETS)
+  * A little bit faster than the standard one
+  * Tried writing to the ETS table from multiple processes but performance was worse, so it currently uses a
+  single process
+* Extra command line options
 
 ## Future improvements
 
@@ -90,6 +97,6 @@ composite numbers per clock cycle.
 
 ## Issues
 * Can run out of memory on windows causing a crash (*nix's seem to chug along happily)
-* Large grids can take a while to generate
+* Large primes can take a while to generate
 
 
