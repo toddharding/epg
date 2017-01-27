@@ -1,7 +1,7 @@
 defmodule Epg.SOEETS do
   @moduledoc """
     This module implements the Sieve of Eratosthenes prime number generation technique
-    And uses ETS for storage
+    making use of ETS for storage
     source: https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
   """
 

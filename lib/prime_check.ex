@@ -4,10 +4,15 @@ defmodule Epg.PrimeCheck do
   """
 
   @doc """
-  Checks if number is prime
-  Input must be a positive number
+  Checks if integer is prime
+  Input must be a positive integer
   Returns true if prime false if not
   Returns `{:error, message}` on failure
+
+  ## parameters
+
+    -n: the integer to check
+
   ## Examples
     iex> Epg.PrimeCheck.is_prime(5)
     true

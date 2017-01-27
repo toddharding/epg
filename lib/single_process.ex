@@ -1,20 +1,32 @@
 defmodule Epg.SingleProcess do
+  @moduledoc """
+    This module implements naive single process
+    prime number generation
+
+    functions are:
+    `generate_primes/1` generates n primes
+  """
+
   @doc """
-      Generates a list of prime numbers of given length
+    Generates a list of the first `n` prime numbers
 
-      Returns `{:error, message}` if anything other than
-      a positive integer is entered
+    Returns `{:error, message}` if anything other than
+    a positive integer is entered
 
-      ## Examples
+    ## parameters
 
-        iex> Epg.SingleProcess.generate_primes(2)
-        [2, 3]
+      -n: number of primes to generate
+
+    ## Examples
+
+      iex> Epg.SingleProcess.generate_primes(2)
+      [2, 3]
 
 
-        iex> Epg.SingleProcess.generate_primes(3)
-        [2, 3, 5]
+      iex> Epg.SingleProcess.generate_primes(3)
+      [2, 3, 5]
 
-    """
+  """
     def generate_primes(n) when is_integer(n) and n > 0 do
       generate_primes_priv(n, 0, [])
     end

@@ -80,6 +80,4 @@ defmodule Epg.SOE do
     1..amount
     |> Enum.map( fn x -> of * x end)
   end
-
-
 end

@@ -51,4 +51,8 @@ defmodule Epg.Utils do
     def chunk_heuristic(_) do
       {:error, "input must be a positive integer"}
     end
+
+    def get_schedulers do
+      :erlang.system_info(:schedulers)
+    end
 end

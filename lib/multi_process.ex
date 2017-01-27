@@ -1,14 +1,14 @@
 defmodule Epg.MultiProcess do
   @moduledoc """
-    This module implements basic multi threading based off of the naive
-    single threaded prime number generator
+    This module implements naive multi process
+    prime number generation
 
     functions are:
     `generate_primes/1` generates n primes
   """
 
   @doc """
-    Generates a list of prime numbers of given length
+    Generates a list of the first `n` prime numbers
 
     Returns `{:error, message}` if anything other than
     a positive integer is entered
