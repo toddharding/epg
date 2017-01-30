@@ -28,7 +28,7 @@ defmodule Epg do
       x when x < 1024 ->
         Epg.SingleProcess.generate_primes(x)
       x when x >= 1024 ->
-        Epg.MultiProcess.generate_primes(x)
+        Epg.MPFlow.generate_primes(x)
     end
     primes
     |> Epg.MultiplicationTable.generate_and_print_multiplication_table
@@ -43,7 +43,7 @@ defmodule Epg do
 
     if options[:list] do
       IO.puts "Generating first #{number} primes"
-      Epg.MultiProcess.generate_primes(number)
+      Epg.MPFlow.generate_primes(number)
       |> Enum.map(fn x -> IO.puts x end)
     end
 

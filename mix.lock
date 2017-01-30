@@ -1,3 +1,5 @@
 %{"benchfella": {:hex, :benchfella, "0.3.3", "bbde48b5fe1ef556baa7ad933008e214e050e81ddb0916350715f5759fb35c0c", [:mix], []},
   "exprintf": {:hex, :exprintf, "0.2.0", "6c97364c75ddb848d0d6142ea3d882567369fc60f0b88a009f41470cab068a56", [:mix], []},
-  "exprof": {:hex, :exprof, "0.2.0", "b03f50d0d33e2f18c8e047d9188ba765dc32daba0b553ed717a98a78561d5eaf", [:mix], [{:exprintf, "~> 0.1", [hex: :exprintf, optional: false]}]}}
+  "exprof": {:hex, :exprof, "0.2.0", "b03f50d0d33e2f18c8e047d9188ba765dc32daba0b553ed717a98a78561d5eaf", [:mix], [{:exprintf, "~> 0.1", [hex: :exprintf, optional: false]}]},
+  "flow": {:hex, :flow, "0.11.0", "6ca9a05f33e3df10bc2ab847ad470523d3a01673456049a60110467d2f31bd58", [:mix], [{:gen_stage, "~> 0.11.0", [hex: :gen_stage, optional: false]}]},
+  "gen_stage": {:hex, :gen_stage, "0.11.0", "943bdfa85c75fa624e0a36a9d135baad20a523be040178f5a215444b45c66ea4", [:mix], []}}
