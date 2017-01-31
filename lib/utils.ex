@@ -55,4 +55,23 @@ defmodule Epg.Utils do
     def get_schedulers do
       :erlang.system_info(:schedulers)
     end
+
+    defp generate_multiples_upto(of, to) do
+      amount = div(to, of)
+      1..amount
+      |> Enum.map( fn x -> of * x end)
+    end
+
+    def generate_multiples(of, from, to, acc) when rem(from, of) != 0 do
+      next_from = from + (of - rem(from, of))
+      generate_multiples(of, next_from, to, acc)
+    end
+
+    def generate_multiples(of, from, to, acc) when from <= to and of <= to do
+      generate_multiples(of, from + of, to, [from | acc])
+    end
+
+    def generate_multiples(of, from, to, acc) when from > to or of > to do
+      acc |> Enum.reverse
+    end
 end

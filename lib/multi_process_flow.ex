@@ -45,15 +45,14 @@ defmodule Epg.MPFlow do
     |> Enum.take(n)
   end
 
-  def generate_primes_upto(n) when is_integer(n) and n > 3 do
+  def generate_primes(_) do
+    {:error, "input must be a positive integer"}
+  end
+
+  def generate_primes_upto(n) when is_integer(n) and n > 2 do
     2..n
     |> Flow.from_enumerable()
     |> Flow.filter(fn i -> Epg.PrimeCheck.is_prime(i) == true end)
     |> Enum.sort
   end
-
-  def generate_primes(_) do
-    {:error, "input must be a positive integer"}
-  end
-
 end
