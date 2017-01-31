@@ -41,11 +41,15 @@ defmodule Epg.MPFlow do
 
   def generate_primes(n) when is_integer(n) and n > 3 do
     approx_elements = Epg.Utils.calculate_nth_prime_approximate(n)
-    2..approx_elements
+    generate_primes_upto(approx_elements)
+    |> Enum.take(n)
+  end
+
+  def generate_primes_upto(n) when is_integer(n) and n > 3 do
+    2..n
     |> Flow.from_enumerable()
     |> Flow.filter(fn i -> Epg.PrimeCheck.is_prime(i) == true end)
     |> Enum.sort
-    |> Enum.take(n)
   end
 
   def generate_primes(_) do
